@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grande_latte", "grande_latte\grande_latte.vcxproj", "{297F3F01-3D48-464B-9114-5C3C3145ED8E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{297F3F01-3D48-464B-9114-5C3C3145ED8E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{297F3F01-3D48-464B-9114-5C3C3145ED8E}.Debug|Win32.Build.0 = Debug|Win32
+		{297F3F01-3D48-464B-9114-5C3C3145ED8E}.Release|Win32.ActiveCfg = Release|Win32
+		{297F3F01-3D48-464B-9114-5C3C3145ED8E}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
