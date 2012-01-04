@@ -49,7 +49,47 @@ void selectAll(BOOL bValue)
 {
 	for(langs_iter = langs.begin(); langs_iter != langs.end(); langs_iter++)
 		langs_iter->second.second = bValue ? 1 : 0;
+}
 
+void selectValue(int nIndex, BOOL bValue)
+{
+	for(langs_iter = langs.begin(); langs_iter != langs.end(); langs_iter++)
+		if (langs_iter->second.first == nIndex)
+			langs_iter->second.second = bValue ? 1 : 0;
+}
+
+void SaveAll()
+{
+	MsiViewExecute(hView,NULL);
+	while (MsiViewFetch(hView,&hRecord) == ERROR_SUCCESS)
+	{
+		// Get buffer size
+		DWORD dwLength = 0;
+		TCHAR* szSizeBuf = new TCHAR[1];
+		unsigned int uiReturn = MsiRecordGetString(hRecord, 1, szSizeBuf, &dwLength);
+		delete[] szSizeBuf;
+		if (ERROR_MORE_DATA == uiReturn)
+		{
+			dwLength++;
+			TCHAR* szTemp = new TCHAR[dwLength];
+			uiReturn = MsiRecordGetString(hRecord, 1, szTemp, &dwLength);
+			if (ERROR_SUCCESS == uiReturn)
+			{
+				if ((wcslen(szTemp) == 6 || wcslen(szTemp) == 7) && wcsncmp(szTemp, L"IS", 2) == 0)
+				{
+					langs_iter = langs.find(szTemp);
+					if (langs_iter != langs.end())
+					{
+						uiReturn = MsiRecordSetInteger(hRecord, 2, langs_iter->second.second);
+					}
+				}
+			}
+		}
+	}
+	if (ERROR_SUCCESS == MsiDatabaseCommit(hDatabase))
+		MessageBox(NULL, L"Windows Installer saved succesfully", TEXT("Info"), MB_ICONINFORMATION);
+	else
+		MessageBox(NULL, L"There's been an error saving the windows installer", TEXT("Error"), MB_ICONERROR);
 }
 
 UINT process_error(UINT uiReturn)
@@ -329,6 +369,102 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 									switch(number)
 									{
+									case 1101:
+										wcscpy_s(szLanguageName, dwSize, L"Assamese");
+										break;
+									case 1610:
+										wcscpy_s(szLanguageName, dwSize, L"Asturian");
+										break;
+									case 2117:
+										wcscpy_s(szLanguageName, dwSize, L"Bengali");
+										break;
+									case 2121:
+										wcscpy_s(szLanguageName, dwSize, L"Tibetan");
+										break;
+									case 1150:
+										wcscpy_s(szLanguageName, dwSize, L"Breton");
+										break;
+									case 1603:
+										wcscpy_s(szLanguageName, dwSize, L"Bodo");
+										break;
+									case 32771:
+										wcscpy_s(szLanguageName, dwSize, L"Catalan (Valencia)");
+										break;
+									case 1604:
+										wcscpy_s(szLanguageName, dwSize, L"Dogri");
+										break;
+									case 2129:
+										wcscpy_s(szLanguageName, dwSize, L"Dzongka");
+										break;
+									case 1553:
+										wcscpy_s(szLanguageName, dwSize, L"Esperanto");
+										break;
+									case 1084:
+										wcscpy_s(szLanguageName, dwSize, L"Gaelic (Scotland)");
+										break;
+									case 1107:
+										wcscpy_s(szLanguageName, dwSize, L"Khmer");
+										break;
+									case 1120:
+										wcscpy_s(szLanguageName, dwSize, L"Kashmiri");
+										break;
+									case 1574:
+										wcscpy_s(szLanguageName, dwSize, L"Kurdish");
+										break;
+									case 1108:
+										wcscpy_s(szLanguageName, dwSize, L"Lao");
+										break;
+									case 1605:
+										wcscpy_s(szLanguageName, dwSize, L"Maithili");
+										break;
+									case 1112:
+										wcscpy_s(szLanguageName, dwSize, L"Manipuri");
+										break;
+									case 1109:
+										wcscpy_s(szLanguageName, dwSize, L"Burmese");
+										break;
+									case 1580:
+										wcscpy_s(szLanguageName, dwSize, L"Ndebele (South)");
+										break;
+									case 1154:
+										wcscpy_s(szLanguageName, dwSize, L"Occitan");
+										break;
+									case 2162:
+										wcscpy_s(szLanguageName, dwSize, L"Oromo");
+										break;
+									case 1096:
+										wcscpy_s(szLanguageName, dwSize, L"Oriya");
+										break;
+									case 1569:
+										wcscpy_s(szLanguageName, dwSize, L"Kinyarwanda");
+										break;
+									case 1606:
+										wcscpy_s(szLanguageName, dwSize, L"Santali");
+										break;
+									case 1113:
+										wcscpy_s(szLanguageName, dwSize, L"Sindhi");
+										break;
+									case 2133:
+										wcscpy_s(szLanguageName, dwSize, L"Sinhala");
+										break;
+									case 1579:
+										wcscpy_s(szLanguageName, dwSize, L"Swazi");
+										break;
+									case 1072:
+										wcscpy_s(szLanguageName, dwSize, L"Sesotho");
+										break;
+									case 1064:
+										wcscpy_s(szLanguageName, dwSize, L"Tajik");
+										break;
+									case 1073:
+										wcscpy_s(szLanguageName, dwSize, L"Tsonga");
+										break;
+									case 1152:
+										wcscpy_s(szLanguageName, dwSize, L"Uighur");
+										break;
+									case 1075:
+										wcscpy_s(szLanguageName, dwSize, L"Venda");
+										break;
 									default:
 										GetLocaleInfo(number, LOCALE_SENGLANGUAGE, szLanguageName, dwSize);
 									}
@@ -362,6 +498,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			break;
 		case IDM_FILE_SAVE:
+			SaveAll();
 			break;
 		case IDM_EDIT_SELECTALL:
 			selectAll(TRUE);
