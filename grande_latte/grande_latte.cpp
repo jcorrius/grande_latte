@@ -60,36 +60,22 @@ void selectValue(int nIndex, BOOL bValue)
 
 void SaveAll()
 {
-	MsiViewExecute(hView,NULL);
-	while (MsiViewFetch(hView,&hRecord) == ERROR_SUCCESS)
+	unsigned int uiReturn = 0;
+	TCHAR* szView = new TCHAR[MAX_PATH];
+	
+	for(langs_iter = langs.begin(); langs_iter != langs.end(); langs_iter++)
 	{
-		// Get buffer size
-		DWORD dwLength = 0;
-		TCHAR* szSizeBuf = new TCHAR[1];
-		unsigned int uiReturn = MsiRecordGetString(hRecord, 1, szSizeBuf, &dwLength);
-		delete[] szSizeBuf;
-		if (ERROR_MORE_DATA == uiReturn)
-		{
-			dwLength++;
-			TCHAR* szTemp = new TCHAR[dwLength];
-			uiReturn = MsiRecordGetString(hRecord, 1, szTemp, &dwLength);
-			if (ERROR_SUCCESS == uiReturn)
-			{
-				if ((wcslen(szTemp) == 6 || wcslen(szTemp) == 7) && wcsncmp(szTemp, L"IS", 2) == 0)
-				{
-					langs_iter = langs.find(szTemp);
-					if (langs_iter != langs.end())
-					{
-						uiReturn = MsiRecordSetInteger(hRecord, 2, langs_iter->second.second);
-					}
-				}
-			}
-		}
+		memset(szView, 0, sizeof(szView)/sizeof(TCHAR));
+		wsprintf(szView, L"UPDATE Property SET Value = '%ws' WHERE Property = '%ws'", 
+			langs_iter->second.second == 1 ? L"1" : L"0", langs_iter->first.c_str());
+		MsiDatabaseOpenView(hDatabase, szView, &hView);
+		MsiViewExecute(hView,NULL);
 	}
+
 	if (ERROR_SUCCESS == MsiDatabaseCommit(hDatabase))
-		MessageBox(NULL, L"Windows Installer saved succesfully", TEXT("Info"), MB_ICONINFORMATION);
+		MessageBox(NULL, L"Windows Installer saved succesfully.", TEXT("Info"), MB_ICONINFORMATION);
 	else
-		MessageBox(NULL, L"There's been an error saving the windows installer", TEXT("Error"), MB_ICONERROR);
+		MessageBox(NULL, L"There's been an error saving the windows installer.", TEXT("Error"), MB_ICONERROR);
 }
 
 UINT process_error(UINT uiReturn)
@@ -144,6 +130,7 @@ LRESULT CALLBACK ListProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 			{ 
 				int nData = SendMessage(hWnd, LB_GETITEMDATA, nIndex, 0);
 				SendMessage(hWnd, LB_SETITEMDATA, nIndex, !nData);
+				selectValue(nIndex, !nData);
 				RedrawWindow(hWnd, NULL, 0, RDW_ERASE |RDW_INVALIDATE | RDW_FRAME |
 					RDW_UPDATENOW); 
 			} 
@@ -317,7 +304,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			// Display the Open dialog box. 
 			if (GetOpenFileName(&ofn)==TRUE) 
 			{
-				UINT uiReturn = MsiOpenDatabase(szFileName, MSIDBOPEN_TRANSACT, &hDatabase);
+				UINT uiReturn = MsiOpenDatabase(szFileName, MSIDBOPEN_DIRECT, &hDatabase);
 				if (ERROR_SUCCESS != uiReturn)
 				{
 					// process error
@@ -356,8 +343,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 						{
 							if ((wcslen(szTemp) == 6 || wcslen(szTemp) == 7) && wcsncmp(szTemp, L"IS", 2) == 0)
 							{
-								// Also get the number
-								int nStatus = MsiRecordGetInteger(hRecord, 2);
+								// Get the column value
+								dwLength = 2;
+								TCHAR* szValue = new TCHAR[dwLength];
+								uiReturn = MsiRecordGetString(hRecord, 2, szValue, &dwLength);
+								int nStatus = wcscmp(szValue, L"1") == 0 ? 1 : 0;
 								
 								// Get the language name
 								int number = 0;
@@ -465,6 +455,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 									case 1075:
 										wcscpy_s(szLanguageName, dwSize, L"Venda");
 										break;
+									case 1100:
+										wcscpy_s(szLanguageName, dwSize, L"Malayalam");
+										break;
 									default:
 										GetLocaleInfo(number, LOCALE_SENGLANGUAGE, szLanguageName, dwSize);
 									}
@@ -516,7 +509,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDM_EXIT:
 			if(hRecord) MsiCloseHandle(hRecord);
 			if(hView) MsiCloseHandle(hView);
-			if(hDatabase) MsiCloseHandle(hDatabase);
+			if(hDatabase) 
+			{
+				MsiDatabaseCommit(hDatabase);
+				MsiCloseHandle(hDatabase);
+			}
 			DestroyWindow(hWnd);
 			break;
 		default:
@@ -597,6 +594,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
+		if(hRecord) MsiCloseHandle(hRecord);
+		if(hView) MsiCloseHandle(hView);
+		if(hDatabase) 
+		{
+			MsiDatabaseCommit(hDatabase);
+			MsiCloseHandle(hDatabase);
+		}
 		PostQuitMessage(0);
 		break;
 	default:
